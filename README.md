@@ -1,10 +1,7 @@
----
-
 # Project: Dev Contribution Widget (Windows)
 
 > Lightweight Windows desktop widget that shows GitHub + LeetCode contribution heatmaps with zero friction.
 
----
 
 ## 1. Final Tech Stack (Locked)
 
