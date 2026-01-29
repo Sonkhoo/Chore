@@ -9,9 +9,16 @@
   --fg-secondary: rgba(255, 255, 255, 0.5);
 
   /* Cell States */
-  --cell-done: rgba(6, 233, 10, 0.477);
-  --cell-partial: rgba(35, 85, 36, 0.421);
-  --cell-missed: rgba(255, 255, 255, 0.06);
+  --cell-done: rgba(3, 198, 6, 0.682);
+  --cell-partial: rgba(45, 91, 45, 0.682);
+  --cell-missed: rgba(0, 0, 0, 0.06);
+
+  /* UI Elements */
+  --ui-track: rgba(255, 255, 255, 0.1);
+  --ui-border: rgba(255, 255, 255, 0.1);
+  --ui-summary-bg: rgba(255, 255, 255, 0.03);
+  --ui-tooltip-bg: rgba(15, 15, 15, 0.95);
+  --ui-tooltip-border: rgba(255, 255, 255, 0.2);
 
   /* Glass Effect */
   --glass-tint: rgba(20, 20, 20, 0.888);
@@ -28,10 +35,17 @@
   :root {
     --fg-primary: rgba(0, 0, 0, 0.9);
     --fg-secondary: rgba(0, 0, 0, 0.5);
-    --cell-done: rgba(8, 241, 0, 0.456);
-    --cell-partial: rgba(10, 106, 15, 0.18);
-    --cell-missed: rgba(151, 9, 9, 0.59);
-    --glass-tint: rgba(255, 255, 255, 0.7);
+    --cell-done: rgba(3, 198, 6, 0.682);
+    --cell-partial: rgba(45, 91, 45, 0.682);
+    --cell-missed: rgba(0, 0, 0, 0.06);
+
+    --ui-track: rgba(0, 0, 0, 0.05);
+    --ui-border: rgba(0, 0, 0, 0.08);
+    --ui-summary-bg: rgba(0, 0, 0, 0.02);
+    --ui-tooltip-bg: rgba(255, 255, 255, 0.95);
+    --ui-tooltip-border: rgba(0, 0, 0, 0.1);
+
+    --glass-tint: rgba(255, 255, 255, 0.85);
   }
 }
 
@@ -146,7 +160,12 @@ body,
 
 .heatmap-wrapper {
   z-index: 2;
-  margin-bottom: 10%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  /* Prevent overflow behavior */
 }
 
 .month-labels {
@@ -215,11 +234,54 @@ body,
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
+.progress-container {
+  width: 100%;
+  padding: 0 4px;
+  margin-top: 16px;
+  box-sizing: border-box;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--ui-track);
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--fg-primary);
+  opacity: 0.6;
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.summary-text {
+  z-index: 2;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: var(--ui-summary-bg);
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--fg-secondary);
+  text-align: center;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+}
+
+.summary-text strong {
+  color: var(--fg-primary);
+  font-weight: 700;
+}
+
 .widget-footer {
   z-index: 2;
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--ui-border);
   font-size: 0.6rem;
   font-weight: 500;
   color: var(--fg-secondary);
@@ -229,16 +291,15 @@ body,
 
 /* Tooltip */
 .tooltip {
-  background: rgba(15, 15, 15, 0.95);
+  background: var(--ui-tooltip-bg);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--ui-tooltip-border);
   border-radius: 12px;
   padding: 10px 12px;
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.6),
-    0 4px 8px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 4px 8px rgba(0, 0, 0, 0.2);
   z-index: 1000;
   pointer-events: none;
   color: var(--fg-primary);

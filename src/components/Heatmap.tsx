@@ -15,6 +15,23 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
     const [hoveredDay, setHoveredDay] = useState<DayData | null>(null);
     const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    const [dayProgress, setDayProgress] = useState(0);
+
+    // Calculate day progress
+    useEffect(() => {
+        const updateProgress = () => {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+            const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+            const total = end.getTime() - start.getTime();
+            const current = now.getTime() - start.getTime();
+            setDayProgress((current / total) * 100);
+        };
+
+        updateProgress();
+        const interval = setInterval(updateProgress, 60000); // Update every minute
+        return () => clearInterval(interval);
+    }, []);
 
     // Listen for window resize
     useEffect(() => {
@@ -169,9 +186,27 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true,
-            timeZoneName: 'short'
+            // timeZoneName: 'short'
         });
     };
+
+    // Calculate total stats
+    const calculateTotals = () => {
+        const weeks = getDisplayWeeks();
+        let totalGithub = 0;
+        let totalLeetcode = 0;
+
+        weeks.forEach(week => {
+            week.forEach(day => {
+                totalGithub += day.github;
+                totalLeetcode += day.leetcode;
+            });
+        });
+
+        return { totalGithub, totalLeetcode };
+    };
+
+    const { totalGithub, totalLeetcode } = calculateTotals();
 
     return (
         <div className="widget-container">
@@ -255,8 +290,21 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
                 </div>
             )}
 
+            <div className="progress-container">
+                <div className="progress-bar">
+                    <div
+                        className="progress-fill"
+                        style={{ width: `${dayProgress}%` }}
+                    />
+                </div>
+            </div>
+
+            <div className="summary-text">
+                You've solved <strong>{totalLeetcode}</strong> LeetCode problem{totalLeetcode !== 1 ? 's' : ''} and made <strong>{totalGithub}</strong> GitHub commit{totalGithub !== 1 ? 's' : ''}
+            </div>
+
             <div className="widget-footer">
-                {getCurrentTime()}
+                {getCurrentTime().toLocaleString().split(",")[1]}
             </div>
         </div>
     );
