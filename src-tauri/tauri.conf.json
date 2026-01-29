@@ -15,11 +15,15 @@
         "title": "chore",
         "width": 300,
         "height": 240,
+        "minWidth": 300,
+        "minHeight": 240,
+        "maxWidth": 800,
+        "maxHeight": 300,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": false,
         "skipTaskbar": true,
-        "resizable": false,
+        "resizable": true,
         "focus": false,
         "center": true
       }

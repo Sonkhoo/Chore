@@ -9,8 +9,8 @@
   --fg-secondary: rgba(255, 255, 255, 0.5);
 
   /* Cell States */
-  --cell-done: rgba(255, 255, 255, 0.45);
-  --cell-partial: rgba(255, 255, 255, 0.2);
+  --cell-done: rgba(6, 233, 10, 0.477);
+  --cell-partial: rgba(35, 85, 36, 0.421);
   --cell-missed: rgba(255, 255, 255, 0.06);
 
   /* Glass Effect */
@@ -28,9 +28,9 @@
   :root {
     --fg-primary: rgba(0, 0, 0, 0.9);
     --fg-secondary: rgba(0, 0, 0, 0.5);
-    --cell-done: rgba(0, 0, 0, 0.4);
-    --cell-partial: rgba(0, 0, 0, 0.18);
-    --cell-missed: rgba(0, 0, 0, 0.05);
+    --cell-done: rgba(8, 241, 0, 0.456);
+    --cell-partial: rgba(10, 106, 15, 0.18);
+    --cell-missed: rgba(151, 9, 9, 0.59);
     --glass-tint: rgba(255, 255, 255, 0.7);
   }
 }
@@ -68,21 +68,42 @@ body,
   position: relative;
   width: 100%;
   height: 100%;
-  padding: 16px;
+  padding: 14px 16px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   background: var(--glass-tint);
   backdrop-filter: blur(var(--glass-blur)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--glass-radius);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   color: var(--fg-primary);
   user-select: none;
   overflow: hidden;
+}
+
+/* Resize Handle Indicator */
+.widget-container::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(135deg,
+      transparent 0%,
+      transparent 40%,
+      rgba(255, 255, 255, 0.15) 40%,
+      rgba(255, 255, 255, 0.15) 45%,
+      transparent 45%,
+      transparent 55%,
+      rgba(255, 255, 255, 0.15) 55%,
+      rgba(255, 255, 255, 0.15) 60%,
+      transparent 60%);
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0.5;
 }
 
 /* Subtle Noise Texture */
@@ -101,12 +122,12 @@ body,
 
 .widget-header {
   z-index: 2;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: grab;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 
 .widget-header:active {
@@ -114,7 +135,7 @@ body,
 }
 
 .streak-badge {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--fg-primary);
@@ -125,16 +146,13 @@ body,
 
 .heatmap-wrapper {
   z-index: 2;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+  margin-bottom: 10%;
 }
 
 .month-labels {
-  height: 16px;
+  height: 14px;
   position: relative;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .month-label {
@@ -148,42 +166,43 @@ body,
 
 .heatmap-content {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
+  justify-content: center;
 }
 
 .day-labels {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  padding-top: 1px;
-  gap: 3px;
+  padding-top: 0;
+  gap: 2.5px;
 }
 
 .day-label {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 600;
   color: var(--fg-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  height: 9px;
-  line-height: 9px;
+  height: 10px;
+  line-height: 10px;
 }
 
 .heatmap-grid {
   display: flex;
-  gap: 3px;
+  gap: 2.5px;
 }
 
 .week-column {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2.5px;
 }
 
 .day-cell {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 2.5px;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
@@ -198,10 +217,10 @@ body,
 
 .widget-footer {
   z-index: 2;
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 500;
   color: var(--fg-secondary);
   text-align: center;
@@ -210,19 +229,34 @@ body,
 
 /* Tooltip */
 .tooltip {
-  background: var(--glass-tint);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: rgba(15, 15, 15, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  z-index: 100;
+    0 12px 32px rgba(0, 0, 0, 0.6),
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  z-index: 1000;
   pointer-events: none;
   color: var(--fg-primary);
-  min-width: 140px;
+  width: 120px;
+  box-sizing: border-box;
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 .tooltip-date {
@@ -230,22 +264,28 @@ body,
   font-weight: 700;
   color: var(--fg-primary);
   margin-bottom: 8px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tooltip-stats {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .stat-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 500;
   color: var(--fg-secondary);
+  white-space: nowrap;
 }
 
 .stat-dot {
@@ -253,6 +293,7 @@ body,
   height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 0 4px currentColor;
 }
 
 .stat-dot.github {

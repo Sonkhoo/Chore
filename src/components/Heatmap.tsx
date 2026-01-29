@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../App.css';
 
 export interface DayData {
@@ -14,6 +14,28 @@ interface HeatmapProps {
 export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
     const [hoveredDay, setHoveredDay] = useState<DayData | null>(null);
     const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+    // Listen for window resize
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Calculate number of weeks to display based on window width
+    const calculateWeeksToShow = () => {
+        // Base calculation: cellWidth(10px) + gap(2.5px) = 12.5px per week
+        // Account for padding (32px), day labels (~30px), and some margin
+        const availableWidth = windowWidth - 80;
+        const weekWidth = 12.5;
+        const maxWeeks = Math.floor(availableWidth / weekWidth);
+
+        // Constrain between 14 weeks (min) and 52 weeks (max/1 year)
+        return Math.max(14, Math.min(52, maxWeeks));
+    };
+
+    const weeksToShow = calculateWeeksToShow();
 
     // Calculate current streak
     const calculateStreak = () => {
@@ -44,19 +66,19 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
         return 'var(--cell-missed)';
     };
 
-    // Get last 17 weeks (~4 months) for proper grid
+    // Get weeks dynamically based on window width
     const getDisplayWeeks = () => {
         const weeks: DayData[][] = [];
         const today = new Date();
         const startDate = new Date(today);
-        // Go back 17 weeks
-        startDate.setDate(today.getDate() - (17 * 7));
+        // Go back based on calculated weeks
+        startDate.setDate(today.getDate() - ((weeksToShow - 1) * 7));
 
         // Start from Sunday
         const dayOfWeek = startDate.getDay();
         startDate.setDate(startDate.getDate() - dayOfWeek);
 
-        for (let week = 0; week < 18; week++) {
+        for (let week = 0; week < weeksToShow; week++) {
             const weekData: DayData[] = [];
             for (let day = 0; day < 7; day++) {
                 const currentDate = new Date(startDate);
@@ -103,7 +125,39 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
     const handleMouseEnter = (day: DayData, event: React.MouseEvent) => {
         setHoveredDay(day);
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-        setHoveredPosition({ x: rect.left, y: rect.top });
+
+        // Calculate smart tooltip position
+        const tooltipWidth = 120; // Increased to fit content properly
+        const tooltipHeight = 100;
+        const offset = 14;
+        const edgePadding = 10;
+
+        let x = rect.left + rect.width / 2;
+        let y = rect.top - tooltipHeight - offset;
+
+        // Check right edge overflow
+        if (x + tooltipWidth / 2 > window.innerWidth - edgePadding) {
+            x = window.innerWidth - tooltipWidth / 2 - edgePadding;
+        }
+        // Check left edge overflow
+        if (x - tooltipWidth / 2 < edgePadding) {
+            x = tooltipWidth / 2 + edgePadding;
+        }
+
+        // Check top overflow - show below if needed
+        if (y < edgePadding) {
+            y = rect.bottom + offset;
+        }
+
+        // Check bottom overflow when showing below
+        if (y + tooltipHeight > window.innerHeight - edgePadding) {
+            // If it doesn't fit below either, position it beside the cell
+            y = rect.top - tooltipHeight / 2 + rect.height / 2;
+            // Clamp to visible area
+            y = Math.max(edgePadding, Math.min(y, window.innerHeight - tooltipHeight - edgePadding));
+        }
+
+        setHoveredPosition({ x, y });
     };
 
     const getCurrentTime = () => {
@@ -133,7 +187,7 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
                         <div
                             key={i}
                             className="month-label"
-                            style={{ left: `${label.offset * 12 + 30}px` }}
+                            style={{ left: `${label.offset * 12.5 + 28}px` }}
                         >
                             {label.month}
                         </div>
@@ -176,8 +230,9 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
                     className="tooltip"
                     style={{
                         position: 'fixed',
-                        left: hoveredPosition.x + 20,
-                        top: hoveredPosition.y - 80
+                        left: `${hoveredPosition.x}px`,
+                        top: `${hoveredPosition.y}px`,
+                        transform: 'translateX(-50%)'
                     }}
                 >
                     <div className="tooltip-date">

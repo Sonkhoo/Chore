@@ -6,10 +6,10 @@ function App() {
   const [data, setData] = useState<DayData[]>([]);
 
   useEffect(() => {
-    // Generate mock data for the last 130 days (~4 months)
-    const mockData = Array.from({ length: 130 }, (_, i) => {
+    // Generate mock data for the last 365 days (full year)
+    const mockData = Array.from({ length: 365 }, (_, i) => {
       const date = new Date();
-      date.setDate(date.getDate() - (130 - i));
+      date.setDate(date.getDate() - (365 - i));
 
       const random = Math.random();
       let github = 0;
