@@ -13,14 +13,15 @@
     "windows": [
       {
         "title": "chore",
-        "width": 800,
-        "height": 400,
+        "width": 960,
+        "height": 340,
         "decorations": false,
         "transparent": true,
-        "alwaysOnTop": true,
+        "alwaysOnTop": false,
         "skipTaskbar": true,
-        "resizable": false,
-        "focus": false
+        "resizable": true,
+        "focus": false,
+        "center": true
       }
     ],
     "security": {
