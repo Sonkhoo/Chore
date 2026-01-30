@@ -8,8 +8,20 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "http:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://api.github.com/graphql"
+        },
+        {
+          "url": "https://leetcode.com/graphql"
+        }
+      ]
+    },
     "shell:default",
-    "core:window:allow-start-dragging"
+    "core:window:allow-start-dragging",
+    "http:default",
+    "sql:default"
   ]
 }

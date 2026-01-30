@@ -6,6 +6,9 @@ use tauri::{
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_sql::Builder::new().build())
+        .plugin(tauri_plugin_http::init())
         .setup(|app| {
             // Create menu items
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;

@@ -9,9 +9,10 @@ export interface DayData {
 
 interface HeatmapProps {
     data: DayData[];
+    onSettingsClick?: () => void;
 }
 
-export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
+export const Heatmap: React.FC<HeatmapProps> = ({ data, onSettingsClick }) => {
     const [hoveredDay, setHoveredDay] = useState<DayData | null>(null);
     const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -122,13 +123,17 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
         let lastMonth = -1;
 
         weeks.forEach((week, index) => {
-            const month = new Date(week[0].date).getMonth();
-            if (month !== lastMonth && index > 0) {
-                labels.push({
-                    month: new Date(week[0].date).toLocaleDateString('en-US', { month: 'short' }).toLowerCase(),
-                    offset: index
-                });
-                lastMonth = month;
+            const date = new Date(week[0].date);
+            const month = date.getMonth();
+            if (month !== lastMonth) {
+                // Only push if not too close to the previous label (unless it's the first)
+                if (labels.length === 0 || index - labels[labels.length - 1].offset > 2) {
+                    labels.push({
+                        month: date.toLocaleDateString('en-US', { month: 'short' }).toLowerCase(),
+                        offset: index
+                    });
+                    lastMonth = month;
+                }
             }
         });
 
@@ -214,21 +219,12 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
                 <div className="streak-badge">
                     🔥 {currentStreak}-day streak
                 </div>
+                <button className="settings-btn" onClick={onSettingsClick} title="Settings">
+                    ⚙️
+                </button>
             </div>
 
             <div className="heatmap-wrapper">
-                <div className="month-labels">
-                    {monthLabels.map((label, i) => (
-                        <div
-                            key={i}
-                            className="month-label"
-                            style={{ left: `${label.offset * 12.5 + 28}px` }}
-                        >
-                            {label.month}
-                        </div>
-                    ))}
-                </div>
-
                 <div className="heatmap-content">
                     <div className="day-labels">
                         <div className="day-label">mon</div>
@@ -240,22 +236,36 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data }) => {
                         <div className="day-label">sun</div>
                     </div>
 
-                    <div className="heatmap-grid">
-                        {weeks.map((week, weekIndex) => (
-                            <div key={weekIndex} className="week-column">
-                                {week.map((day, dayIndex) => (
-                                    <div
-                                        key={`${weekIndex}-${dayIndex}`}
-                                        className="day-cell"
-                                        style={{
-                                            backgroundColor: getColor(day.github, day.leetcode),
-                                        }}
-                                        onMouseEnter={(e) => handleMouseEnter(day, e)}
-                                        onMouseLeave={() => setHoveredDay(null)}
-                                    />
-                                ))}
-                            </div>
-                        ))}
+                    <div className="grid-container">
+                        <div className="month-labels">
+                            {monthLabels.map((label, i) => (
+                                <div
+                                    key={i}
+                                    className="month-label"
+                                    style={{ left: `${label.offset * 12.5}px` }}
+                                >
+                                    {label.month}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="heatmap-grid">
+                            {weeks.map((week, weekIndex) => (
+                                <div key={weekIndex} className="week-column">
+                                    {week.map((day, dayIndex) => (
+                                        <div
+                                            key={`${weekIndex}-${dayIndex}`}
+                                            className="day-cell"
+                                            style={{
+                                                backgroundColor: getColor(day.github, day.leetcode),
+                                            }}
+                                            onMouseEnter={(e) => handleMouseEnter(day, e)}
+                                            onMouseLeave={() => setHoveredDay(null)}
+                                        />
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>

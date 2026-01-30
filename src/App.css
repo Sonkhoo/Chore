@@ -194,8 +194,15 @@ body,
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  padding-top: 0;
+  padding-top: 20px;
+  /* Align with grid starting below month labels */
   gap: 2.5px;
+}
+
+.grid-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 .day-label {
@@ -366,3 +373,141 @@ body,
   background: var(--fg-primary);
   opacity: 0.5;
 }
+
+/* Settings Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal-content {
+  width: 260px;
+  background: var(--ui-tooltip-bg);
+  border: 1px solid var(--ui-tooltip-border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+  color: var(--fg-primary);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--fg-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.setting-section {
+  margin-bottom: 16px;
+}
+
+.setting-section label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--fg-secondary);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.connect-btn {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.connect-btn.github {
+  background: #24292e;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.connect-btn.github:hover {
+  background: #2f363d;
+}
+
+.setting-section input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  padding: 8px;
+  color: var(--fg-primary);
+  font-size: 0.8rem;
+  box-sizing: border-box;
+}
+
+.setting-section input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.status-text {
+  font-size: 0.7rem;
+  color: var(--fg-secondary);
+  margin-top: 6px;
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Settings Button */
+.settings-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--fg-secondary);
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  opacity: 0; /* Hidden by default */
+  pointer-events: none;
+}
+
+.widget-header:hover .settings-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.settings-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--fg-primary);
+}
+

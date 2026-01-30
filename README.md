@@ -34,38 +34,46 @@
 ---
 
 ## 2. Repository Structure
-
 ```
 dev-contribution-widget/
-├── src/                     # React frontend
-│   ├── components/
+├── src/                         # FRONTEND (React)
+│   ├── components/              # Pure UI
 │   │   ├── Heatmap.tsx
 │   │   ├── DayCell.tsx
 │   │   └── SettingsModal.tsx
-│   ├── services/
-│   │   ├── github.ts
-│   │   ├── leetcode.ts
-│   │   └── cache.ts
+│   │
+│   ├── services/                # Thin IPC clients ONLY
+│   │   ├── github.ts             # invoke('fetch_github')
+│   │   ├── leetcode.ts           # invoke('fetch_leetcode')
+│   │   └── cache.ts              # invoke('load_cache')
+│   │
 │   ├── styles/
-│   │   └── theme.css
 │   ├── App.tsx
 │   └── main.tsx
 │
-├── src-tauri/                # Rust backend
+├── src-tauri/                    # BACKEND (Rust)
 │   ├── src/
-│   │   ├── main.rs
-│   │   ├── tray.rs
-│   │   ├── scheduler.rs
-│   │   ├── github.rs
-│   │   ├── leetcode.rs
-│   │   └── storage.rs
+│   │   ├── main.rs               # app bootstrap
+│   │   ├── commands/             # IPC boundary (IMPORTANT)
+│   │   │   ├── github.rs
+│   │   │   ├── leetcode.rs
+│   │   │   └── settings.rs
+│   │   │
+│   │   ├── services/             # business logic
+│   │   │   ├── github.rs          # GraphQL calls
+│   │   │   ├── leetcode.rs
+│   │   │   ├── scheduler.rs
+│   │   │   └── cache.rs
+│   │   │
+│   │   ├── storage/              # persistence
+│   │   │   ├── sqlite.rs
+│   │   │   └── secure.rs          # keychain / secrets
+│   │   │
+│   │   ├── tray.rs               # tray menu
+│   │   └── window.rs             # widget window logic
+│   │
 │   ├── tauri.conf.json
 │   └── Cargo.toml
-│
-├── public/
-├── README.md
-├── CONTRIBUTING.md
-└── LICENSE
 ```
 
 ---
@@ -160,7 +168,7 @@ query($username: String!) {
 
 ### Backend
 
-* Fetch once every 12h
+* Fetch once every 4h or during refresh
 * Store daily counts in DB
 * Never block UI thread
 
