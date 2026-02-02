@@ -21,7 +21,7 @@ importers:
         specifier: ~2
         version: 2.3.4
       '@tauri-apps/plugin-sql':
-        specifier: ~2.3.1
+        specifier: ~2
         version: 2.3.1
       date-fns:
         specifier: ^4.1.0

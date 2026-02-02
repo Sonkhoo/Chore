@@ -8,10 +8,11 @@
   --fg-primary: rgba(255, 255, 255, 0.95);
   --fg-secondary: rgba(255, 255, 255, 0.5);
 
-  /* Cell States */
-  --cell-done: rgba(3, 198, 6, 0.682);
-  --cell-partial: rgba(45, 91, 45, 0.682);
-  --cell-missed: rgba(0, 0, 0, 0.06);
+  /* GitHub-style Cell States */
+  --github-empty: rgba(255, 255, 255, 0.06);
+  --github-half: rgba(57, 211, 83, 0.5);
+  --github-full: rgb(57, 211, 83);
+  --github-border: rgba(255, 255, 255, 0.15);
 
   /* UI Elements */
   --ui-track: rgba(255, 255, 255, 0.1);
@@ -35,9 +36,10 @@
   :root {
     --fg-primary: rgba(0, 0, 0, 0.9);
     --fg-secondary: rgba(0, 0, 0, 0.5);
-    --cell-done: rgba(3, 198, 6, 0.682);
-    --cell-partial: rgba(45, 91, 45, 0.682);
-    --cell-missed: rgba(0, 0, 0, 0.06);
+    --github-empty: rgba(0, 0, 0, 0.06);
+    --github-half: rgba(64, 196, 99, 0.5);
+    --github-full: rgb(57, 211, 83);
+    --github-border: rgba(0, 0, 0, 0.15);
 
     --ui-track: rgba(0, 0, 0, 0.05);
     --ui-border: rgba(0, 0, 0, 0.08);
@@ -82,7 +84,7 @@ body,
   position: relative;
   width: 100%;
   height: 100%;
-  padding: 14px 16px;
+  padding: 20px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -136,26 +138,23 @@ body,
 
 .widget-header {
   z-index: 2;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: grab;
-  padding: 2px 0;
+  padding: 0;
 }
 
 .widget-header:active {
   cursor: grabbing;
 }
 
-.streak-badge {
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+.header-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--fg-primary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .heatmap-wrapper {
@@ -179,8 +178,7 @@ body,
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--fg-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 
 .heatmap-content {
@@ -196,7 +194,7 @@ body,
   justify-content: space-around;
   padding-top: 20px;
   /* Align with grid starting below month labels */
-  gap: 2.5px;
+  gap: 3px;
 }
 
 .grid-container {
@@ -206,39 +204,42 @@ body,
 }
 
 .day-label {
-  font-size: 0.55rem;
-  font-weight: 600;
+  font-size: 9px;
+  font-weight: 400;
   color: var(--fg-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  height: 10px;
-  line-height: 10px;
+  letter-spacing: 0;
+  height: 13px;
+  line-height: 13px;
 }
 
 .heatmap-grid {
   display: flex;
-  gap: 2.5px;
+  gap: 3px;
 }
 
 .week-column {
   display: flex;
   flex-direction: column;
-  gap: 2.5px;
+  gap: 3px;
 }
 
 .day-cell {
-  width: 10px;
-  height: 10px;
-  border-radius: 2.5px;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 13px;
+  height: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: transform 0.12s ease;
 }
 
 .day-cell:hover {
-  transform: scale(1.35);
+  transform: scale(1.15);
   z-index: 10;
-  filter: brightness(1.3);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.day-cell svg {
+  display: block;
 }
 
 .progress-container {
@@ -265,25 +266,6 @@ body,
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.summary-text {
-  z-index: 2;
-  margin-top: 12px;
-  padding: 8px 12px;
-  background: var(--ui-summary-bg);
-  border-radius: 8px;
-  font-size: 0.7rem;
-  font-weight: 400;
-  color: var(--fg-secondary);
-  text-align: center;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-}
-
-.summary-text strong {
-  color: var(--fg-primary);
-  font-weight: 700;
-}
-
 .widget-footer {
   z-index: 2;
   margin-top: 10px;
@@ -296,23 +278,34 @@ body,
   letter-spacing: 0.01em;
 }
 
-/* Tooltip */
-.tooltip {
-  background: var(--ui-tooltip-bg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--ui-tooltip-border);
-  border-radius: 12px;
+/* GitHub-style Tooltip */
+.github-tooltip {
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 6px;
   padding: 10px 12px;
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.4),
-    0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   z-index: 1000;
   pointer-events: none;
-  color: var(--fg-primary);
-  width: 120px;
-  box-sizing: border-box;
-  animation: tooltipFadeIn 0.15s ease-out;
+  color: white;
+  font-size: 12px;
+  white-space: nowrap;
+  animation: tooltipFadeIn 0.12s ease-out;
+}
+
+@media (prefers-color-scheme: light) {
+  .github-tooltip {
+    background: rgba(0, 0, 0, 0.85);
+  }
+}
+
+.tooltip-state {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.tooltip-date-small {
+  font-size: 11px;
+  opacity: 0.8;
 }
 
 @keyframes tooltipFadeIn {
@@ -320,61 +313,13 @@ body,
     opacity: 0;
     transform: translateX(-50%) translateY(-4px);
   }
-
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
 }
 
-.tooltip-date {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--fg-primary);
-  margin-bottom: 8px;
-  letter-spacing: -0.02em;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tooltip-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.stat-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--fg-secondary);
-  white-space: nowrap;
-}
-
-.stat-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  box-shadow: 0 0 4px currentColor;
-}
-
-.stat-dot.github {
-  background: var(--fg-primary);
-  opacity: 0.9;
-}
-
-.stat-dot.leetcode {
-  background: var(--fg-primary);
-  opacity: 0.5;
-}
-
-/* Settings Modal */
+/* Settings Modal - Unused but kept for potential future use */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -486,28 +431,5 @@ body,
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
-}
-
-/* Settings Button */
-.settings-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--fg-secondary);
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s;
-  opacity: 0; /* Hidden by default */
-  pointer-events: none;
-}
-
-.widget-header:hover .settings-btn {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.settings-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--fg-primary);
 }
 

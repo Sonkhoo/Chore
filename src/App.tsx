@@ -1,55 +1,69 @@
 import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+
 import { Heatmap, DayData } from './components/Heatmap';
-import { SettingsModal } from './components/SettingsModal';
-import { fetchAllContributions } from './services/data-fetcher';
 import "./App.css";
 
 function App() {
-  const [data, setData] = useState<DayData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  // For testing - the user should replace these via a Settings UI later
-  const githubUser = "sonkhoo"; // e.g., "saankhadeep"
-  const githubToken = "read:user"; // Needs a Classic PAT with 'read:user' scope
-  const leetcodeUser = ""; // e.g., "saankha_dev"
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const realData = await fetchAllContributions(githubUser, githubToken, leetcodeUser);
-        setData(realData);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch data');
-      } finally {
-        setIsLoading(false);
-      }
+  const [data, setData] = useState<DayData[]>(() => {
+    const arr: DayData[] = [];
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (364 - i));
+      arr.push({ date: d.toISOString().split('T')[0], state: 0 });
     }
+    return arr;
+  });
 
-    loadData();
-  }, [githubUser, leetcodeUser, githubToken]);
+  // Load data from database on mount
+  useEffect(() => {
+    loadHabitData();
+  }, []);
 
-  // function generateMockData() {
-  //   const mockData = Array.from({ length: 365 }, (_, i) => {
-  //     const date = new Date();
-  //     date.setDate(date.getDate() - (365 - i));
-  //     const random = Math.random();
-  //     return {
-  //       date: date.toISOString().split('T')[0],
-  //       github: random > 0.7 ? Math.floor(Math.random() * 8) : 0,
-  //       leetcode: random > 0.85 ? Math.floor(Math.random() * 5) : 0
-  //     };
-  //   });
-  //   setData(mockData);
-  // }
+  const loadHabitData = async () => {
+    try {
+      const dbData = await invoke<Array<{ date: string; state: number }>>('get_habit_data');
+      
+      // Merge database data with initial data
+      setData(prev => {
+        const updated = [...prev];
+        dbData.forEach(dbDay => {
+          const index = updated.findIndex(d => d.date === dbDay.date);
+          if (index !== -1) {
+            updated[index] = { date: dbDay.date, state: dbDay.state as 0 | 1 | 2 };
+          }
+        });
+        return updated;
+      });
+    } catch (error) {
+      console.error('Failed to load habit data:', error);
+    }
+  };
+
+  // Handler to update a day's state (cycle 0->1->2->0)
+  const handleDayClick = async (date: string) => {
+    const currentDay = data.find(d => d.date === date);
+    const newState = currentDay ? ((currentDay.state + 1) % 3) as 0 | 1 | 2 : 1;
+    
+    // Update UI immediately
+    setData(prev => prev.map(day =>
+      day.date === date ? { ...day, state: newState } : day
+    ));
+
+    // Save to database
+    try {
+      await invoke('save_habit_day', { date, state: newState });
+    } catch (error) {
+      console.error('Failed to save habit day:', error);
+      // Revert on error
+      await loadHabitData();
+    }
+  };
 
   return (
     <main className="container" style={{ background: 'transparent' }}>
-      <Heatmap data={data} onSettingsClick={() => setIsSettingsOpen(true)} />
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-      {isLoading && <div className="loading-overlay">Syncing...</div>}
-      {error && <div className="error-toast">{error}</div>}
+      <Heatmap data={data} onDayClick={handleDayClick} />
     </main>
   );
 }

@@ -1,22 +1,23 @@
+
 import React, { useState, useEffect } from 'react';
 import '../App.css';
 
+// Simple habit tracker day state: 0 = empty, 1 = half, 2 = full
 export interface DayData {
     date: string;
-    github: number;
-    leetcode: number;
+    state: 0 | 1 | 2;
 }
 
 interface HeatmapProps {
     data: DayData[];
-    onSettingsClick?: () => void;
+    onDayClick?: (date: string) => void;
 }
 
-export const Heatmap: React.FC<HeatmapProps> = ({ data, onSettingsClick }) => {
-    const [hoveredDay, setHoveredDay] = useState<DayData | null>(null);
-    const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
+export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [dayProgress, setDayProgress] = useState(0);
+    const [hoveredDay, setHoveredDay] = useState<DayData | null>(null);
+    const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
     // Calculate day progress
     useEffect(() => {
@@ -34,7 +35,6 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onSettingsClick }) => {
         return () => clearInterval(interval);
     }, []);
 
-    // Listen for window resize
     useEffect(() => {
         const handleResize = () => setWindowWidth(window.innerWidth);
         window.addEventListener('resize', handleResize);
@@ -43,72 +43,32 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onSettingsClick }) => {
 
     // Calculate number of weeks to display based on window width
     const calculateWeeksToShow = () => {
-        // Base calculation: cellWidth(10px) + gap(2.5px) = 12.5px per week
-        // Account for padding (32px), day labels (~30px), and some margin
         const availableWidth = windowWidth - 80;
-        const weekWidth = 12.5;
+        const weekWidth = 16; // 13px cell + 3px gap
         const maxWeeks = Math.floor(availableWidth / weekWidth);
-
-        // Constrain between 14 weeks (min) and 52 weeks (max/1 year)
         return Math.max(14, Math.min(52, maxWeeks));
     };
 
     const weeksToShow = calculateWeeksToShow();
-
-    // Calculate current streak
-    const calculateStreak = () => {
-        let streak = 0;
-        const sortedData = [...data].sort((a, b) =>
-            new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-
-        for (const day of sortedData) {
-            if (day.github > 0 || day.leetcode > 0) {
-                streak++;
-            } else {
-                break;
-            }
-        }
-        return streak;
-    };
-
-    const getColor = (github: number, leetcode: number): string => {
-        if (github > 0 && leetcode > 0) {
-            return 'var(--cell-done)';
-        }
-
-        if (github > 0 || leetcode > 0) {
-            return 'var(--cell-partial)';
-        }
-
-        return 'var(--cell-missed)';
-    };
 
     // Get weeks dynamically based on window width
     const getDisplayWeeks = () => {
         const weeks: DayData[][] = [];
         const today = new Date();
         const startDate = new Date(today);
-        // Go back based on calculated weeks
         startDate.setDate(today.getDate() - ((weeksToShow - 1) * 7));
-
-        // Start from Sunday
         const dayOfWeek = startDate.getDay();
         startDate.setDate(startDate.getDate() - dayOfWeek);
-
         for (let week = 0; week < weeksToShow; week++) {
             const weekData: DayData[] = [];
             for (let day = 0; day < 7; day++) {
                 const currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + week * 7 + day);
-
                 const dateStr = currentDate.toISOString().split('T')[0];
                 const dayData = data.find(d => d.date === dateStr) || {
                     date: dateStr,
-                    github: 0,
-                    leetcode: 0
+                    state: 0
                 };
-
                 weekData.push(dayData);
             }
             weeks.push(weekData);
@@ -116,114 +76,119 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onSettingsClick }) => {
         return weeks;
     };
 
-    // Get month labels
+    const weeks = getDisplayWeeks();
+
+    // Handle click: cycle state 0 -> 1 -> 2 -> 0
+    // Use the handler from props
+    const handleDayClick = (date: string) => {
+        if (onDayClick) onDayClick(date);
+    };
+
+    // Month labels
     const getMonthLabels = () => {
         const labels: { month: string; offset: number }[] = [];
         const weeks = getDisplayWeeks();
         let lastMonth = -1;
-
-        weeks.forEach((week, index) => {
-            const date = new Date(week[0].date);
-            const month = date.getMonth();
-            if (month !== lastMonth) {
-                // Only push if not too close to the previous label (unless it's the first)
-                if (labels.length === 0 || index - labels[labels.length - 1].offset > 2) {
-                    labels.push({
-                        month: date.toLocaleDateString('en-US', { month: 'short' }).toLowerCase(),
-                        offset: index
-                    });
-                    lastMonth = month;
+        
+        weeks.forEach((week, weekIndex) => {
+            // Check each day in the week to find when month changes
+            week.forEach((day, dayIndex) => {
+                const date = new Date(day.date);
+                const month = date.getMonth();
+                
+                // Only add label when we encounter a new month
+                if (month !== lastMonth) {
+                    // Only add if it's the first label or enough spacing from previous
+                    if (labels.length === 0 || weekIndex - labels[labels.length - 1].offset >= 2) {
+                        labels.push({
+                            month: date.toLocaleDateString('en-US', { month: 'short' }).toLowerCase(),
+                            offset: weekIndex
+                        });
+                        lastMonth = month;
+                    }
                 }
-            }
+            });
         });
-
+        
         return labels;
     };
-
-    const weeks = getDisplayWeeks();
     const monthLabels = getMonthLabels();
-    const currentStreak = calculateStreak();
+
+    // Get current date and time for footer
+    const getCurrentDateTime = () => {
+        const now = new Date();
+        const date = now.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric'
+        });
+        const time = now.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+        return `${date}`;
+    };
+
+    // Render circle with vertical half-fill effect
+    const renderCircle = (state: 0 | 1 | 2) => {
+        const size = 13;
+        const radius = 5.5;
+        const center = size / 2;
+        
+        if (state === 0) {
+            // Empty circle
+            return (
+                <svg width={size} height={size}>
+                    <circle cx={center} cy={center} r={radius} fill="var(--github-empty)" stroke="var(--github-border)" strokeWidth="0.5" />
+                </svg>
+            );
+        }
+        
+        if (state === 1) {
+            // Half filled (left 50% horizontally)
+            return (
+                <svg width={size} height={size}>
+                    <defs>
+                        <clipPath id="left-half">
+                            <rect x="0" y="0" width={center} height={size} />
+                        </clipPath>
+                    </defs>
+                    <circle cx={center} cy={center} r={radius} fill="var(--github-empty)" stroke="var(--github-border)" strokeWidth="0.5" />
+                    <circle cx={center} cy={center} r={radius} fill="var(--github-full)" clipPath="url(#left-half)" />
+                </svg>
+            );
+        }
+        
+        // Full circle
+        return (
+            <svg width={size} height={size}>
+                <circle cx={center} cy={center} r={radius} fill="var(--github-full)" stroke="var(--github-border)" strokeWidth="0.5" />
+            </svg>
+        );
+    };
+
+    // Get state label for tooltip
+    const getStateLabel = (state: 0 | 1 | 2): string => {
+        if (state === 0) return 'No activity';
+        if (state === 1) return 'Partial completion';
+        return 'Completed';
+    };
 
     const handleMouseEnter = (day: DayData, event: React.MouseEvent) => {
         setHoveredDay(day);
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-
-        // Calculate smart tooltip position
-        const tooltipWidth = 120; // Increased to fit content properly
-        const tooltipHeight = 100;
-        const offset = 14;
-        const edgePadding = 10;
-
-        let x = rect.left + rect.width / 2;
-        let y = rect.top - tooltipHeight - offset;
-
-        // Check right edge overflow
-        if (x + tooltipWidth / 2 > window.innerWidth - edgePadding) {
-            x = window.innerWidth - tooltipWidth / 2 - edgePadding;
-        }
-        // Check left edge overflow
-        if (x - tooltipWidth / 2 < edgePadding) {
-            x = tooltipWidth / 2 + edgePadding;
-        }
-
-        // Check top overflow - show below if needed
-        if (y < edgePadding) {
-            y = rect.bottom + offset;
-        }
-
-        // Check bottom overflow when showing below
-        if (y + tooltipHeight > window.innerHeight - edgePadding) {
-            // If it doesn't fit below either, position it beside the cell
-            y = rect.top - tooltipHeight / 2 + rect.height / 2;
-            // Clamp to visible area
-            y = Math.max(edgePadding, Math.min(y, window.innerHeight - tooltipHeight - edgePadding));
-        }
-
-        setHoveredPosition({ x, y });
-    };
-
-    const getCurrentTime = () => {
-        const now = new Date();
-        return now.toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-            // timeZoneName: 'short'
+        setTooltipPos({ 
+            x: rect.left + rect.width / 2, 
+            y: rect.top - 8 
         });
     };
-
-    // Calculate total stats
-    const calculateTotals = () => {
-        const weeks = getDisplayWeeks();
-        let totalGithub = 0;
-        let totalLeetcode = 0;
-
-        weeks.forEach(week => {
-            week.forEach(day => {
-                totalGithub += day.github;
-                totalLeetcode += day.leetcode;
-            });
-        });
-
-        return { totalGithub, totalLeetcode };
-    };
-
-    const { totalGithub, totalLeetcode } = calculateTotals();
 
     return (
         <div className="widget-container">
             <div className="widget-header" data-tauri-drag-region>
-                <div className="streak-badge">
-                    🔥 {currentStreak}-day streak
-                </div>
-                <button className="settings-btn" onClick={onSettingsClick} title="Settings">
-                    ⚙️
-                </button>
+                {getCurrentDateTime()}
             </div>
-
             <div className="heatmap-wrapper">
                 <div className="heatmap-content">
                     <div className="day-labels">
@@ -235,20 +200,18 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onSettingsClick }) => {
                         <div className="day-label">sat</div>
                         <div className="day-label">sun</div>
                     </div>
-
                     <div className="grid-container">
                         <div className="month-labels">
                             {monthLabels.map((label, i) => (
                                 <div
                                     key={i}
                                     className="month-label"
-                                    style={{ left: `${label.offset * 12.5}px` }}
+                                    style={{ left: `${label.offset * 16}px` }}
                                 >
                                     {label.month}
                                 </div>
                             ))}
                         </div>
-
                         <div className="heatmap-grid">
                             {weeks.map((week, weekIndex) => (
                                 <div key={weekIndex} className="week-column">
@@ -256,12 +219,13 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onSettingsClick }) => {
                                         <div
                                             key={`${weekIndex}-${dayIndex}`}
                                             className="day-cell"
-                                            style={{
-                                                backgroundColor: getColor(day.github, day.leetcode),
-                                            }}
+                                            onClick={() => handleDayClick(day.date)}
                                             onMouseEnter={(e) => handleMouseEnter(day, e)}
                                             onMouseLeave={() => setHoveredDay(null)}
-                                        />
+                                            title=""
+                                        >
+                                            {renderCircle(day.state)}
+                                        </div>
                                     ))}
                                 </div>
                             ))}
@@ -269,37 +233,27 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onSettingsClick }) => {
                     </div>
                 </div>
             </div>
-
             {hoveredDay && (
                 <div
-                    className="tooltip"
+                    className="github-tooltip"
                     style={{
                         position: 'fixed',
-                        left: `${hoveredPosition.x}px`,
-                        top: `${hoveredPosition.y}px`,
-                        transform: 'translateX(-50%)'
+                        left: `${tooltipPos.x}px`,
+                        top: `${tooltipPos.y}px`,
+                        transform: 'translate(-50%, -100%)'
                     }}
                 >
-                    <div className="tooltip-date">
+                    <div className="tooltip-state">{getStateLabel(hoveredDay.state)}</div>
+                    <div className="tooltip-date-small">
                         {new Date(hoveredDay.date).toLocaleDateString('en-US', {
-                            weekday: 'short',
                             month: 'short',
-                            day: 'numeric'
+                            day: 'numeric',
+                            year: 'numeric'
                         })}
                     </div>
-                    <div className="tooltip-stats">
-                        <div className="stat-row">
-                            <span className="stat-dot github"></span>
-                            <span>Github: {hoveredDay.github}</span>
-                        </div>
-                        <div className="stat-row">
-                            <span className="stat-dot leetcode"></span>
-                            <span>LeetCode: {hoveredDay.leetcode}</span>
-                        </div>
-                    </div>
                 </div>
-            )}
 
+            )}
             <div className="progress-container">
                 <div className="progress-bar">
                     <div
@@ -309,13 +263,10 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onSettingsClick }) => {
                 </div>
             </div>
 
-            <div className="summary-text">
-                You've solved <strong>{totalLeetcode}</strong> LeetCode problem{totalLeetcode !== 1 ? 's' : ''} and made <strong>{totalGithub}</strong> GitHub commit{totalGithub !== 1 ? 's' : ''}
-            </div>
-
             <div className="widget-footer">
-                {getCurrentTime().toLocaleString().split(",")[1]}
+                {` • ${data.filter(d => d.state === 2).length} days completed`}
             </div>
         </div>
     );
 };
+
