@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import '../App.css';
 
 // Simple habit tracker day state: 0 = empty, 1 = half, 2 = full
@@ -17,7 +18,7 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [dayProgress, setDayProgress] = useState(0);
     const [hoveredDay, setHoveredDay] = useState<DayData | null>(null);
-    const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+    const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0, below: false });
     const [isProgressHovered, setIsProgressHovered] = useState(false);
     const [timeRemaining, setTimeRemaining] = useState('');
 
@@ -65,8 +66,10 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
         const today = new Date();
         const startDate = new Date(today);
         startDate.setDate(today.getDate() - ((weeksToShow - 1) * 7));
+        // Adjust to start on Monday (getDay() returns 0=Sunday, 1=Monday, etc.)
         const dayOfWeek = startDate.getDay();
-        startDate.setDate(startDate.getDate() - dayOfWeek);
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        startDate.setDate(startDate.getDate() - daysFromMonday);
         for (let week = 0; week < weeksToShow; week++) {
             const weekData: DayData[] = [];
             for (let day = 0; day < 7; day++) {
@@ -86,10 +89,42 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
 
     const weeks = getDisplayWeeks();
 
+    // Trigger confetti celebration
+    const triggerConfetti = (event: React.MouseEvent) => {
+        const rect = (event.target as HTMLElement).getBoundingClientRect();
+        const x = (rect.left + rect.width / 2) / window.innerWidth;
+        const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+        confetti({
+            startVelocity: 20,
+            particleCount: 50,
+            spread: 60,
+            origin: { x, y },
+            colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42'],
+            scalar: 0.8,
+            ticks: 150
+        });
+    };
+
     // Handle click: cycle state 0 -> 1 -> 2 -> 0
     // Use the handler from props
-    const handleDayClick = (date: string) => {
-        if (onDayClick) onDayClick(date);
+    const handleDayClick = (date: string, event: React.MouseEvent) => {
+        if (onDayClick) {
+            // Get current state to determine if next click will complete it
+            const currentDay = data.find(d => d.date === date);
+            const currentState = currentDay?.state || 0;
+            
+            // Fire confetti when transitioning TO state 2 (completing)
+            // State cycle: 0 -> 1 -> 2 -> 0
+            // So confetti fires when current is 1 (next will be 2)
+            const willBeCompleted = currentState === 1;
+            
+            onDayClick(date);
+            
+            if (willBeCompleted) {
+                triggerConfetti(event);
+            }
+        }
     };
 
     // Month labels
@@ -222,10 +257,32 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
     const handleMouseEnter = (day: DayData, event: React.MouseEvent) => {
         setHoveredDay(day);
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-        setTooltipPos({ 
-            x: rect.left + rect.width / 2, 
-            y: rect.top - 8 
-        });
+        
+        // Calculate tooltip position with boundary checking
+        const tooltipEstimatedWidth = 150; // approximate tooltip width
+        const tooltipEstimatedHeight = 50; // approximate tooltip height
+        const padding = 8;
+        
+        let x = rect.left + rect.width / 2;
+        let y = rect.top - padding;
+        
+        // Check right boundary
+        if (x + tooltipEstimatedWidth / 2 > window.innerWidth) {
+            x = window.innerWidth - tooltipEstimatedWidth / 2 - padding;
+        }
+        
+        // Check left boundary
+        if (x - tooltipEstimatedWidth / 2 < 0) {
+            x = tooltipEstimatedWidth / 2 + padding;
+        }
+        
+        // Check top boundary - if tooltip would go above window, show below instead
+        if (y - tooltipEstimatedHeight < 0) {
+            y = rect.bottom + padding;
+            setTooltipPos({ x, y, below: true });
+        } else {
+            setTooltipPos({ x, y, below: false });
+        }
     };
     
     return (
@@ -237,11 +294,11 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
                 <div className="heatmap-content">
                     <div className="day-labels">
                         <div className="day-label">mon</div>
-                        <div className="day-label">tue</div>
+                        <div className="day-label"></div>
                         <div className="day-label">wed</div>
-                        <div className="day-label">thu</div>
+                        <div className="day-label"></div>
                         <div className="day-label">fri</div>
-                        <div className="day-label">sat</div>
+                        <div className="day-label"></div>
                         <div className="day-label">sun</div>
                     </div>
                     <div className="grid-container">
@@ -263,7 +320,7 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
                                         <div
                                             key={`${weekIndex}-${dayIndex}`}
                                             className="day-cell"
-                                            onClick={() => handleDayClick(day.date)}
+                                            onClick={(e) => handleDayClick(day.date, e)}
                                             onMouseEnter={(e) => handleMouseEnter(day, e)}
                                             onMouseLeave={() => setHoveredDay(null)}
                                             title=""
@@ -284,7 +341,7 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
                         position: 'fixed',
                         left: `${tooltipPos.x}px`,
                         top: `${tooltipPos.y}px`,
-                        transform: 'translate(-50%, -100%)'
+                        transform: tooltipPos.below ? 'translate(-50%, 0%)' : 'translate(-50%, -100%)'
                     }}
                 >
                     <div className="tooltip-state">{getStateLabel(hoveredDay.state)}</div>
@@ -300,7 +357,11 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
             )}
             <div 
                 className="progress-container"
-                onMouseEnter={() => setIsProgressHovered(true)}
+                onMouseEnter={(e) => {
+                    setIsProgressHovered(true);
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top - 8, below: false });
+                }}
                 onMouseLeave={() => setIsProgressHovered(false)}
             >
                 <div className="progress-bar">
@@ -310,7 +371,16 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
                     />
                 </div>
                 {isProgressHovered && (
-                    <div className="progress-tooltip">{timeRemaining}</div>
+                    <div 
+                        className="progress-tooltip"
+                        style={{
+                            left: `${tooltipPos.x}px`,
+                            top: `${tooltipPos.y}px`,
+                            transform: 'translate(-50%, -100%)'
+                        }}
+                    >
+                        {timeRemaining}
+                    </div>
                 )}
             </div>
 
