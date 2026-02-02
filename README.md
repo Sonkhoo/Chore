@@ -2,15 +2,15 @@
 
 <div align="center">
 
-![Chore Widget - Dark Mode](public/icon/Chore.jpg)
+<img src="public/icon/Chore.png" width="164" />
 
 **A minimal desktop widget for tracking your daily coding habits with a GitHub-style heatmap**
 
-[![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)](https://github.com/yourusername/chore/releases)
-[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/yourusername/chore)
+[![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)](https://github.com/Sonkhoo/chore/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/Sonkhoo/chore)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-[Download Latest Release](https://github.com/yourusername/chore/releases) • [Report Bug](https://github.com/yourusername/chore/issues) • [Request Feature](https://github.com/yourusername/chore/issues)
+[Download Latest Release](https://github.com/Sonkhoo/chore/releases) • [Report Bug](https://github.com/Sonkhoo/chore/issues) • [Request Feature](https://github.com/Sonkhoo/chore/issues)
 
 </div>
 
@@ -71,7 +71,7 @@ The widget remembers your streak and displays:
 
 ### Option 1: Installer (Recommended)
 
-1. Download `chore_0.1.1_x64-setup.exe` from [Releases](https://github.com/yourusername/chore/releases)
+1. Download `chore_0.1.1_x64-setup.exe` from [Releases](https://github.com/Sonkhoo/chore/releases)
 2. Run the installer (no admin required)
 3. Launch **Chore** from Start Menu or Desktop
 
@@ -179,6 +179,6 @@ Inspired by GitHub's contribution graph and the daily coding challenge culture o
 
 **Made with ❤️ by developers, for developers**
 
-[⭐ Star this repo](https://github.com/yourusername/chore) if you find it useful!
+[⭐ Star this repo](https://github.com/Sonkhoo/chore) if you find it useful!
 
 </div>
