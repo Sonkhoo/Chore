@@ -18,8 +18,10 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
     const [dayProgress, setDayProgress] = useState(0);
     const [hoveredDay, setHoveredDay] = useState<DayData | null>(null);
     const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+    const [isProgressHovered, setIsProgressHovered] = useState(false);
+    const [timeRemaining, setTimeRemaining] = useState('');
 
-    // Calculate day progress
+    // Calculate day progress and time remaining
     useEffect(() => {
         const updateProgress = () => {
             const now = new Date();
@@ -28,6 +30,12 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
             const total = end.getTime() - start.getTime();
             const current = now.getTime() - start.getTime();
             setDayProgress((current / total) * 100);
+            
+            // Calculate time remaining
+            const remaining = end.getTime() - now.getTime();
+            const hours = Math.floor(remaining / (1000 * 60 * 60));
+            const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+            setTimeRemaining(`${hours}h ${minutes}m left today`);
         };
 
         updateProgress();
@@ -88,30 +96,52 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
     const getMonthLabels = () => {
         const labels: { month: string; offset: number }[] = [];
         const weeks = getDisplayWeeks();
-        let lastMonth = -1;
-        
+
+        const weekStridePx = 16; // matches left: offset * 16px
+        const totalGridWidthPx = weeksToShow * weekStridePx;
+
+        const estimateLabelWidthPx = (text: string) => {
+            const rootFontSize =
+                (typeof window !== 'undefined'
+                    ? parseFloat(getComputedStyle(document.documentElement).fontSize)
+                    : 13) || 13;
+            const fontSizePx = rootFontSize * 0.65; // matches CSS: 0.65rem
+
+            // Monospace-ish estimate + letter-spacing (0.06em)
+            const charWidthPx = fontSizePx * 0.62;
+            const letterSpacingPx = fontSizePx * 0.06;
+            const textWidthPx = (text.length * charWidthPx) + (Math.max(0, text.length - 1) * letterSpacingPx);
+
+            // tiny safety padding to avoid 1-2px overshoot
+            return textWidthPx + 4;
+        };
+
+        let lastMonth: number | null = null;
+
         weeks.forEach((week, weekIndex) => {
-            // Check each day in the week to find when month changes
-            week.forEach((day, dayIndex) => {
-                const date = new Date(day.date);
-                const month = date.getMonth();
-                
-                // Only add label when we encounter a new month
-                if (month !== lastMonth) {
-                    // Only add if it's the first label or enough spacing from previous
-                    if (labels.length === 0 || weekIndex - labels[labels.length - 1].offset >= 2) {
-                        labels.push({
-                            month: date.toLocaleDateString('en-US', { month: 'short' }).toLowerCase(),
-                            offset: weekIndex
-                        });
-                        lastMonth = month;
-                    }
-                }
-            });
+            const referenceDay = new Date(week[0].date); // Sunday of the column
+            const month = referenceDay.getMonth();
+
+            if (month !== lastMonth) {
+                const monthText = referenceDay
+                    .toLocaleDateString('en-US', { month: 'short' })
+                    .toLowerCase();
+
+                const labelWidthPx = estimateLabelWidthPx(monthText);
+                const maxLeftPx = Math.max(0, totalGridWidthPx - labelWidthPx);
+                const maxOffset = Math.max(0, Math.floor(maxLeftPx / weekStridePx));
+
+                labels.push({
+                    month: monthText,
+                    offset: Math.min(weekIndex, maxOffset)
+                });
+                lastMonth = month;
+            }
         });
-        
+
         return labels;
     };
+
     const monthLabels = getMonthLabels();
 
     // Get current date and time for footer
@@ -122,27 +152,41 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
             month: 'short',
             day: 'numeric'
         });
-        const time = now.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
         return `${date}`;
     };
 
     // Render circle with vertical half-fill effect
-    const renderCircle = (state: 0 | 1 | 2) => {
+    const renderCircle = (state: 0 | 1 | 2, dateStr?: string) => {
         const size = 13;
         const radius = 5.5;
         const center = size / 2;
-        
+
         if (state === 0) {
-            // Empty circle
-            return (
-                <svg width={size} height={size}>
-                    <circle cx={center} cy={center} r={radius} fill="var(--github-empty)" stroke="var(--github-border)" strokeWidth="0.5" />
-                </svg>
-            );
+            // Only show red cross for missed days in the past or today
+            let isPastOrToday = true;
+            if (dateStr) {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const cellDate = new Date(dateStr);
+                cellDate.setHours(0,0,0,0);
+                isPastOrToday = cellDate <= today;
+            }
+            if (isPastOrToday) {
+                return (
+                    <svg width={size} height={size}>
+                        <circle cx={center} cy={center} r={radius} fill="var(--github-empty)" stroke="var(--github-border)" strokeWidth="0.5" />
+                        <line x1={center-3} y1={center-3} x2={center+3} y2={center+3} stroke="#e93420b4" strokeWidth="1.0" strokeLinecap="round" />
+                        <line x1={center+3} y1={center-3} x2={center-3} y2={center+3} stroke="#e93420b4" strokeWidth="1.0" strokeLinecap="round" />
+                    </svg>
+                );
+            } else {
+                // Future day: plain empty circle
+                return (
+                    <svg width={size} height={size}>
+                        <circle cx={center} cy={center} r={radius} fill="var(--github-empty)" stroke="var(--github-border)" strokeWidth="0.5" />
+                    </svg>
+                );
+            }
         }
         
         if (state === 1) {
@@ -183,7 +227,7 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
             y: rect.top - 8 
         });
     };
-
+    
     return (
         <div className="widget-container">
             <div className="widget-header" data-tauri-drag-region>
@@ -206,7 +250,7 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
                                 <div
                                     key={i}
                                     className="month-label"
-                                    style={{ left: `${label.offset * 16}px` }}
+                                    style={{ left: `${label.offset * 16 + 8}px` }}
                                 >
                                     {label.month}
                                 </div>
@@ -224,7 +268,7 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
                                             onMouseLeave={() => setHoveredDay(null)}
                                             title=""
                                         >
-                                            {renderCircle(day.state)}
+                                            {renderCircle(day.state, day.date)}
                                         </div>
                                     ))}
                                 </div>
@@ -254,17 +298,29 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, onDayClick }) => {
                 </div>
 
             )}
-            <div className="progress-container">
+            <div 
+                className="progress-container"
+                onMouseEnter={() => setIsProgressHovered(true)}
+                onMouseLeave={() => setIsProgressHovered(false)}
+            >
                 <div className="progress-bar">
                     <div
                         className="progress-fill"
                         style={{ width: `${dayProgress}%` }}
                     />
                 </div>
+                {isProgressHovered && (
+                    <div className="progress-tooltip">{timeRemaining}</div>
+                )}
+            </div>
+
+            <div className="heatmap-legend">
+                <span className="legend-item">◐ Github / Leetcode</span>
+                <span className="legend-item">● Both</span>
             </div>
 
             <div className="widget-footer">
-                {` • ${data.filter(d => d.state === 2).length} days completed`}
+                {`${data.filter(d => d.state === 2).length} coding days this year`}
             </div>
         </div>
     );
